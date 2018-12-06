@@ -171,7 +171,20 @@ All BFD measurements are currently done in pixel coordinates.  The final $PQR$ v
 
 \subsection{Measuring Noise}
 \label{Sec:Noise}
-When calculating the $PQR$ values, we need the pixel variance for each object to compute the moment covariance matrix.  The images themselves carry a variance map, however this variance does not account for the covariance between pixels from the interpolation.  There is also an attempt to rescale the variance map of each coadded image to account for missing variance.  This complicates the use of the variance map to compute the pixel variance.  Instead, we choose to measure the variance locally for each object by growing the detection footprint around each object and calculating the variance of the pixels not found in the detection mask.  The footprint is grown by factors of 2, up to a maximum of 8, until there are more than 100 pixels not flagged in the detection mask.  When an insufficient number of pixels is found these objects are flagged.  This happens most frequently with junk detections around bright stars.
+When calculating the $PQR$ values, we need the pixel variance for each object to compute the moment covariance matrix.  The coadded images themselves carry a variance map, however this variance does not account for the covariance between pixels from the interpolation.  There is also an attempt to rescale the variance map of each coadded image to account for the missing variance lost due to covariance.  This complicates the use of the variance map.  Instead, we choose to measure the variance locally for each object by growing the detection footprint around each object and calculating the variance of the pixels not found in the detection mask.  The footprint is grown by factors of 2, up to a maximum of 8, until there are more than 100 pixels not flagged in the detection mask.  When an insufficient number of pixels is found these objects are flagged.  This happens most frequently with junk detections around bright stars.
+
+We can compare the variance estimates measured this way to the values from the coadded variance map.  We take the median value of the variance map from the objects bounding box (note, this was how the noise was measured for the re-Gaussianization method) and then scale by the appropriate factor for each patch that we found in the HSC processing logs as this information was not stored in the files.  Figure\ref{fig:noise_compare} shows the ratio of the variances from the coadd maps to our method.  We see that our method measures a larger variance by $\sim10\%$.  This could potentially come from pixels around the outskirts of galaxies that have flux but were below the detection threshold and thus incorrectly included in our method.  To test the potential effect of mis-estimating the pixel noise, we tested our shear algorithms on simulations (see Section\ref{Sec:Sims} where we artificially increased the pixel noise from the true value by $10\%$ and saw no detectable bias in the measured shear.  We did the same thing for the actual data and measured the shear signal around galaxy clusters (see Section\ref{Sec:Comparison}).  We also saw no statistically significant change in the lensing signal.  Thus, if we are indeed wrong in the variance calculation it should not significantly impact the result.
+
+
+\begin{figure}
+    \includegraphics[width=0.5\textwidth]{noise_compare.png}
+    \caption{
+       The ratio of the pixel variance as measured by taking the average of noise pixels around objects compared to the value obtained from the coadd variance map.  We see that our method measures the variance to be $\sim10\%$ larger. 
+    }
+    \label{fig:noise_compare}
+\end{figure}
+
+
 
 The coaddition process introduces pixel correlations when resampling to a common grid.  If not properly accounted for, this can lead to biases in the shear at the level of $2-3\%$ (see Section \ref{Sec:Sims}).  Due to the limited information from the pixels used for the variance calculation around each object, we calculate the correlations on average, over the whole survey.  In the presence of correlations, the moment covariance matrix, $\matC_M$, becomes:
 
